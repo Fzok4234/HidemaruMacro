@@ -1,0 +1,13 @@
+.gitattributes  text    eol=lf      working-tree-encoding=UTF-8
+.gitignore      text    eol=lf      working-tree-encoding=UTF-8
+LICENSE         text    eol=lf      working-tree-encoding=UTF-8
+*.txt           text    eol=lf      working-tree-encoding=UTF-8
+*.md            text    eol=lf      working-tree-encoding=UTF-8
+*.cmd           text    eol=crlf    working-tree-encoding=SHIFT-JIS
+*.cs            text    eol=crlf    working-tree-encoding=UTF-16LE-BOM
+*.ps1           text    eol=crlf    working-tree-encoding=UTF-16LE-BOM
+*.mac           text    eol=crlf    working-tree-encoding=UTF-16LE-BOM
+*.hmbook        text    eol=crlf    working-tree-encoding=UTF-16LE-BOM
+*.hmdesk        text    eol=crlf    working-tree-encoding=UTF-16LE-BOM
+*.png           -text
+*.jpg           -text
