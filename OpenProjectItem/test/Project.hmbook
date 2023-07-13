@@ -1,0 +1,4 @@
+//type=project
+"mac:OpenProjectItem.mac /rr /fu8-lf-nobom Aaaa.txt 1",name="Aaaa"
+"mac:OpenProjectItem.mac /rr /fs-crlf Bbbb.cmd 1",name="Bbbb"
+"mac:OpenProjectItem.mac /fu-crlf-bom C:\Cccc.cs 0",name="Cccc"

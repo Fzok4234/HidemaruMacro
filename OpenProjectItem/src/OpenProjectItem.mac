@@ -1,0 +1,143 @@
+// Flag enum items.
+#flag_RelativePath  = 0x00000001    ;
+
+#defaultCompatibleMode  = 0 ;
+
+#hostHidemaru   = 0 ;
+#guestHidemaru  = 0 ;
+
+// Macro arguments.
+$openOption = @""   ;
+$itemPath   = @""   ;
+#flag       = 0     ;
+
+// Available on the #hostHidemaru context.
+#explorerPane       = 0 ;
+#fileSystemObject   = 0 ;
+
+call Initialize ;
+if ( ! ##return ) {
+    call Finalize ; endmacro @""    ;
+}
+
+call Main   ;
+$mainReturn = $$return  ;
+
+call Finalize ; endmacro $mainReturn    ;
+
+// ##return : true ( 1 ) if the initialization has been completed successfully; otherwise, false ( 0 ).
+Initialize  :
+    debuginfo 2 ;
+    disablebreak    ;
+    #defaultCompatibleMode  = setcompatiblemode(
+                0x00000002
+            |   0x00000008
+            |   0x00000030
+            |   0x00000200
+            |   0x00002000
+            |   0x00080000
+            |   0x00800000
+            |   0x04000000
+    )   ;
+    
+    #hostHidemaru   = hidemaruhandle( 0 )   ;
+    
+    if ( argcount < 2 ) {
+        debuginfo @"The opening option and the item path are required." + "\U0000000A"  ;
+        return false    ;
+    }
+    $openOption = getarg( 0 )           ; // Required.
+    $itemPath   = getarg( 1 )           ; // Required.
+    #flag       = val( getarg( 2 ) )    ; // Optional.
+    
+    #explorerPane   = loaddll( hidemarudir + @"\HmExplorerPane.dll" )   ;
+    if ( ! #explorerPane ) {
+        debuginfo @"HmExplorerPane.dll cannot be loaded." + "\U0000000A"    ;
+        return false    ;
+    }
+    #fileSystemObject   = createobject( @"Scripting.FileSystemObject" ) ;
+    if ( ! #fileSystemObject ) {
+        debuginfo @"FileSystemObject cannot be loaded." + "\U0000000A"  ;
+        return false    ;
+    }
+    
+    return true ;
+
+// ##return : Always true ( 1 ).
+Finalize    :
+    setbackgroundmode 1 ;
+    setactivehidemaru #hostHidemaru ;
+    
+    if ( #fileSystemObject ) {
+        releaseobject #fileSystemObject ;
+        #fileSystemObject   = 0 ;
+    }
+    if ( #explorerPane ) {
+        freedll #explorerPane   ;
+        #explorerPane   =0  ;
+    }
+    
+    setcompatiblemode #defaultCompatibleMode    ;
+    enablebreak ;
+    debuginfo 0 ;
+    
+    if ( #guestHidemaru ) {
+        setactivehidemaru #guestHidemaru    ;
+    }
+    
+    return true ;
+
+// $$return : Always an empty string.
+Main    :
+    $$path  = @""   ;
+    if ( ( #flag & #flag_RelativePath ) == #flag_RelativePath ) {
+        call GetProjectDirectory    ;
+        call CombinePath $$return , $itemPath   ;
+        $$path  = $$return  ;
+    } else {
+        $$path  = $itemPath ;
+    }
+    
+    $$openArgument  = $openOption   ;
+    if ( ucs4len( $$path ) ) {
+        $$openArgument  = $$openArgument + @" """ + $$path + @""""  ;
+    }
+    
+    openfile $$openArgument ;
+    #guestHidemaru  = hidemaruhandle( 0 )   ;
+    
+    return @""  ;
+
+// $$1      : The first path to combine.
+// $$2      : The second path to combine.
+// $$return : The combined paths. If one of the specified paths is an empty string,
+//            this method returns the other path.
+CombinePath :
+    if ( ! ucs4len( $$1 ) ) {
+        return $$2  ;
+    }
+    if ( ! ucs4len( $$2 ) ) {
+        return $$1  ;
+    }
+    
+    return $$1 + @"\" + $$2 ;
+
+// $$return : The path of the parent directory of the current project file.
+//            If no project file is opened, this method returns an empty string.
+GetProjectDirectory :
+    $$projectFile   = dllfuncstr(
+            #explorerPane
+        ,   @"GetProject"
+        ,   hidemaruhandle( 0 )
+    )   ;
+    
+    if ( ! ucs4len( $$projectFile ) ) {
+        return @""  ;
+    }
+    
+    return callmethod_returnstr(
+            #fileSystemObject
+        ,   @"GetParentFolderName"
+        ,   $$projectFile
+    )   ;
+
